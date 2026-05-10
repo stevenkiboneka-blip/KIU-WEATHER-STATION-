@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>KIU WEATHER STATION | Real-Time Environmental Analytics</title>
+    
+    <!-- Google Fonts + Leaflet CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Boxicons CDN -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <!-- Your Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="dashboard">
+    <header>
+        <div class="brand">
+            <i class='bx bxs-cloud-lightning'></i>
+            <div>
+                <h1>KIU WEATHER STATION</h1>
+                <p class="subtitle">Kampala International University • Real-Time Environmental Analytics</p>
+            </div>
+        </div>
+        <div id="status" class="disconnected">CONNECTING...</div>
+    </header>
+
+    <!-- Dashboard nav -->
+    <nav class="mini-nav">
+        <button id="nav-Overview" class="nav-btn active" data-view="overview">Overview</button>
+        <button id="nav-Table" class="nav-btn" data-view="table">Table</button>
+        <button id="nav-Charts" class="nav-btn" data-view="charts">Charts</button>
+        <button id="nav-Admin" class="nav-btn" data-view="admin">Feedback</button>
+    </nav>
+
+    <div id="view-overview" class="view" style="display:block;">
+        <div class="main-layout">
+            <!-- LEFT COLUMN: main sensor grid -->
+            <div class="column main">
+                <div class="grid">
+                    <div class="card metric card-temp">
+                        <div class="icon-box"><i class='bx bxs-thermometer'></i></div>
+                        <div class="data">
+                            <span class="label">TEMPERATURE</span>
+                            <div class="val-group"><span class="value" id="temp">--</span><span class="unit">°C</span></div>
+                        </div>
+                    </div>
+                    <div class="card metric card-hum">
+                        <div class="icon-box"><i class='bx bxs-droplet-half'></i></div>
+                        <div class="data">
+                            <span class="label">HUMIDITY</span>
+                            <div class="val-group"><span class="value" id="hum">--</span><span class="unit">%</span></div>
+                        </div>
+                    </div>
+                    <div class="card metric card-pres">
+                        <div class="icon-box"><i class='bx bxs-dashboard'></i></div>
+                        <div class="data">
+                            <span class="label">PRESSURE</span>
+                            <div class="val-group"><span class="value" id="pres">--</span><span class="unit">hPa</span></div>
+                        </div>
+                    </div>
+                    <div class="card metric card-rain">
+                        <div class="icon-box"><i class='bx bx-cloud-rain'></i></div>
+                        <div class="data">
+                            <span class="label">RAINFALL</span>
+                            <div class="val-group"><span class="value" id="rain">--</span><span class="unit">mm</span></div>
+                        </div>
+                    </div>
+                    <div class="card metric solar-card">
+                        <div class="icon-box"><i class='bx bxs-zap'></i></div>
+                        <div class="data">
+                            <span class="label">SOLAR POTENTIAL</span>
+                            <div class="val-group"><span class="value" id="solarV">--</span><span class="unit">V</span></div>
+                        </div>
+                    </div>
+                    <div class="card metric card-light">
+                        <div class="icon-box"><i class='bx bxs-sun'></i></div>
+                        <div class="data">
+                            <span class="label">LIGHT INTENSITY</span>
+                            <div class="val-group"><span class="value" id="light">--</span><span class="unit">lux</span></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Battery status -->
+                <div class="card battery-footer">
+                    <div class="bat-info">
+                        <span class="label">🔋 SYSTEM BATTERY HEALTH</span>
+                        <div class="val-group"><b id="batP_text">--</b><span class="unit">%</span></div>
+                        <div class="battery-bar"><div id="batFill" style="width: 0%"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Map + Wind -->
+            <div class="column side">
+                <div class="card map-container">
+                    <div class="map-badge">
+                        <i class='bx bxs-map-pin'></i>
+                        <span> KIU WEATHER STATION | Kampala</span>
+                    </div>
+                    <div id="map"></div>
+                </div>
+                
+                <div class="card wind-card">
+                    <div class="wind-info">
+                        <span class="label">💨 HARDWARE WIND (SIM)</span>
+                        <div class="wind-main">
+                            <span class="value" id="wind">0.0</span><span class="unit">km/h</span>
+                        </div>
+                        <span id="windDirLabel" class="sub-value">Direction: --</span>
+                    </div>
+                    <div class="compass">
+                        <div class="compass-arrow" id="arrow">↑</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Table Dashboard -->
+    <div id="view-table" class="view" style="display:none; padding:12px;">
+        <div class="section-card">
+            <h2>Sensor Data Table</h2>
+            <p>Recent raw sensor readings (most recent first)</p>
+            <div class="table-scroll">
+                <table id="tableResults" style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr><th>Time</th><th>Temp</th><th>Hum</th><th>Pres</th><th>Rain</th><th>Wind</th></tr>
+                    </thead>
+                    <tbody id="tableResultsBody"></tbody>
+                </table>
+            </div>
+            <button id="tableRefreshBtn">Refresh</button>
+        </div>
+    </div>
+
+    <!-- NEW: Charts Dashboard -->
+    <div id="view-charts" class="view" style="display:none; padding:12px;">
+        <div class="section-card">
+            <h2>📊 Weather Trends</h2>
+            <p>Daily averages for the last 7 days</p>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>🌡️ Temperature</h3>
+                    <canvas id="barTemp" height="220"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>💧 Humidity</h3>
+                    <canvas id="barHum" height="220"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>🧭 Pressure</h3>
+                    <canvas id="barPres" height="220"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>🌧️ Rainfall</h3>
+                    <canvas id="barRain" height="220"></canvas>
+                </div>
+            </div>
+
+            <button id="chartsRefreshBtn">Refresh Charts</button>
+        </div>
+    </div>
+
+    <!-- NEW: User Feedback Dashboard -->
+    <div id="view-admin" class="view" style="display:none; padding:12px;">
+        <div class="section-card">
+            <h2>User Feedback</h2>
+            <p>Please share your bio details, comment about the system, and any advice for the admin.</p>
+            <div id="adminStats"></div>
+            <div id="feedbackMessage" style="margin-top:16px;color:#a5f3fc;"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts order: leaflet first, then MQTT, Chart.js, then main logic -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/paho-mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
